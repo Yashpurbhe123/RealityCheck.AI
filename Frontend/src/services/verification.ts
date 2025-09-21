@@ -16,7 +16,6 @@ export async function verifyTweetContent(tweetId: string | number | undefined, c
     // Extract the verification result from the response
     // The backend route wraps the result in { response: actualResult }
     if (response?.response) {
-      console.log('[VerifyTweet][client] Extracted result:', response.response)
       return response.response as VerificationResult
     }
     

@@ -5,9 +5,9 @@ class SupabaseService {
     async fetchSimilarDocuments(embeddings, matchCount = 5, threshold = 0.3) {
 
         const { data, error } = await supabaseClient.rpc('match_documents', {
-            query_embedding: embeddings,
-            match_threshold: threshold,
-            match_count: matchCount
+            p_match_count: matchCount,
+            p_query_embedding: embeddings,
+            p_similarity_threshold: threshold
         });
 
         console.log('Supabase RPC result:', { data, error });

@@ -56,9 +56,7 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
     
     try {
       const result = await verifyTweetContent(id, tweet.content)
-      console.log('[TweetCard] Verification result:', result)
       if (result) {
-        console.log('[TweetCard] Setting verification result:', result)
         setVerificationResult(result)
         setShowVerificationModal(true)
       } else {

@@ -6,7 +6,7 @@ dotenv.config();
 const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const llm = genai.getGenerativeModel({
-  model: "gemini-2.5-pro",
+  model: "gemini-2.5-flash",
 });
 
 export default llm;
