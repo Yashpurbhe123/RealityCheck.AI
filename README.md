@@ -101,19 +101,6 @@ RealityCheck AI is built with a **layered architecture** for performance and sca
 
 ---
 
-## 💰 Estimated Implementation Cost 💵  
-
-| Item                         | Monthly Estimate |
-|-------------------------------|------------------|
-| ☁️ Cloud Compute (GCP/AWS)    | $200–400         |
-| 🗂️ Supabase Vector DB         | $25–50           |
-| ⚡ Redis Managed Service      | $20–50           |
-| 🤖 Gemini LLM API Usage       | $50–150          |
-| 📦 Docker/Hosting             | $50–100          |
-| **Total (Monthly)**           | **$350–700**     |
-
----
-
 ## 📈 Impact & Future Scope 🌍  
 
 ### 🌟 Immediate Impact  
