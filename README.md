@@ -85,7 +85,7 @@ RealityCheck AI is built with a **layered architecture** for performance and sca
 
 📊 **Architecture Diagram :**  
 
-![Architecture](Assets\Architecture.gif)  
+![Architecture](Assets/Architecture.gif)  
 
 ---
 
