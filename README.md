@@ -74,8 +74,8 @@ Here’s how **RealityCheck AI** works:
 
 RealityCheck AI is built with a **layered architecture** for performance and scalability:  
 
-- 🎨 **Frontend (MERN Clone App)** → Demo feed UI with flagged posts.  
-- ⚙️ **Backend (Node.js APIs)** → Orchestrates AI, caching, and scraping.
+- 🎨 **Frontend (React.js + Vite + TS Demo App)** → Demo feed UI with flagged posts.  
+- ⚙️ **Backend (Node.js + Express.js + MongoDB APIs & NoSQL DB)** → Orchestrates AI, caching, and scraping.
 - 🧠 **AI Layer (Gemini LLM)** → Detects misinformation contextually.  
 - 🗂️ **Knowledge & Storage Layer**  
   - Supabase → Vector DB for embeddings.  
@@ -91,8 +91,8 @@ RealityCheck AI is built with a **layered architecture** for performance and sca
 
 ## ⚙️ Tech Stack 🛠️  
 
-- **Frontend:** React.js + Vite + Typescript 
-- **Backend:** Node.js + Express.js + MongoDB + (API orchestration) & NoSQL Database 
+- **Frontend:** React.js + Vite + Typescript (Demo App)
+- **Backend:** Node.js + Express.js + MongoDB (API orchestration & NoSQL Database)
 - **AI Engine:** Gemini LLM (Google Cloud AI) 🤖  
 - **Vector Database:** Supabase  
 - **Caching:** Redis (multi-layer)  
