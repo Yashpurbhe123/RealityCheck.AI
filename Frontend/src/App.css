@@ -1,0 +1,6 @@
+/* App overrides: remove Vite boilerplate constraints and enable full-bleed layout */
+#root {
+  width: 100%;
+  min-height: 100vh;
+  text-align: initial;
+}

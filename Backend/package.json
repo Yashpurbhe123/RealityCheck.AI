@@ -1,0 +1,39 @@
+{
+  "name": "twitter-clone-backend",
+  "version": "1.0.0",
+  "description": "MongoDB backend for Twitter clone",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "seed": "node scripts/seed.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@huggingface/inference": "^4.8.0",
+    "@supabase/supabase-js": "^2.57.4",
+    "@tensorflow/tfjs": "^4.22.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "jsonwebtoken": "^9.0.2",
+    "langchain": "^0.3.34",
+    "mongoose": "^8.0.3",
+    "redis": "^5.8.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": [
+    "twitter",
+    "clone",
+    "mongodb",
+    "express",
+    "api"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
