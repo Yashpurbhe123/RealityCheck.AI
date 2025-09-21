@@ -65,8 +65,8 @@ Here’s how **RealityCheck AI** works:
    - ❗ Needs Caution  
 7️⃣ User gets **explanation + educational note** ✨  
 
-📊 **Flowchart (replace path with your file):**  
-![Process Flow](assets/Flowchart.gif)  
+📊 **Flowchart :**  
+![Process Flow](Assets/Flowchart.gif)  
 
 ---
 
@@ -83,7 +83,7 @@ RealityCheck AI is built with a **layered architecture** for performance and sca
 - 🌐 **Data Sources** → Real-time scraping + historical misinformation datasets.  
 - 📦 **Deployment Layer** → Docker containers on Google Cloud / AWS.  
 
-📊 **Architecture Diagram (replace path with your file):**  
+📊 **Architecture Diagram :**  
 
 ![Architecture](Assets\Architecture.gif)  
 
