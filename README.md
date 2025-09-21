@@ -129,26 +129,6 @@ RealityCheck AI is built with a **layered architecture** for performance and sca
 
 ---
 
-## 🙌 Hackathon Note ⚡  
-
-👉 *Only if all the above submissions pass, evaluators will review your GitHub repository, focusing on technical implementation, coding quality, and Google Cloud AI integration.*  
-
-💯 That’s why our **README is crafted to perfection** 🏆 – showcasing:  
-- ✅ Clear problem statement & solution  
-- ✅ Flow & architecture (with diagrams)  
-- ✅ Detailed USP, features, and impact  
-- ✅ Strong Google Cloud AI integration  
-
----
-
-## 🚀 Conclusion  
-
-**RealityCheck AI** is not just a fact-checker…  
-It is a **digital truth agent** 🕵️‍♂️ that:  
-- Detects misinformation ⚡  
-- Explains it clearly 📢  
-- Educates users for the future 📚  
-
 💡 Our vision → **An informed digital society, resilient against fake news.**  
 
 🔥 **RealityCheck AI – Truth, in Real Time.**  
