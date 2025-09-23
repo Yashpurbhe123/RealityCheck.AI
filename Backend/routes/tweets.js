@@ -258,4 +258,54 @@ router.get('/search/:query', async (req, res) => {
   }
 });
 
+// Delete tweet
+router.delete('/:id', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const tweet = await Tweet.findById(req.params.id);
+    
+    if (!tweet) {
+      return res.status(404).json({ error: 'Tweet not found' });
+    }
+    
+    // Check if the user is the author of the tweet
+    if (tweet.author.toString() !== userId) {
+      return res.status(403).json({ error: 'You can only delete your own tweets' });
+    }
+    
+    // Delete the tweet
+    await Tweet.findByIdAndDelete(req.params.id);
+    
+    res.json({ message: 'Tweet deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Search tweets
+router.get('/search/:query', async (req, res) => {
+  try {
+    const query = req.params.query;
+    
+    if (!query || query.trim() === '') {
+      return res.json([]);
+    }
+    
+    const tweets = await Tweet.find({
+      $or: [
+        { content: { $regex: query, $options: 'i' } }
+      ]
+    })
+    .populate('author', 'name handle avatarUrl')
+    .sort({ createdAt: -1 })
+    .lean(); // Use lean() to avoid virtuals issues
+    
+    res.json(tweets || []);
+  } catch (error) {
+    console.error('Search tweets error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
+

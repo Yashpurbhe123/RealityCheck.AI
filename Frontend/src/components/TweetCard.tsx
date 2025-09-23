@@ -1,4 +1,4 @@
-import { getState, toggleLike, toggleRetweet, addReply } from '../store-mongodb'
+import { getState, toggleLike, toggleRetweet, addReply, deleteTweet } from '../store-mongodb'
 import type { Tweet } from '../store-mongodb'
 import { useEffect, useState } from 'react'
 import { subscribe } from '../store-mongodb'
@@ -38,6 +38,7 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
   const isReply = !!tweet.parentTweet
   const likedByMe = state.currentUserId ? tweet.likes.includes(state.currentUserId) : false
   const retweetedByMe = state.currentUserId ? tweet.retweets.some(r => r.user === state.currentUserId) : false
+  const isMyTweet = state.currentUserId && author._id === state.currentUserId
 
   function handleReply(e: React.FormEvent) {
     e.preventDefault()
@@ -45,6 +46,16 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
     addReply(tweet._id, replyText.trim())
     setReplyText('')
     setShowReply(false)
+  }
+
+  async function handleDelete() {
+    if (window.confirm('Are you sure you want to delete this tweet? This action cannot be undone.')) {
+      try {
+        await deleteTweet(tweet._id)
+      } catch (error) {
+        console.error('Failed to delete tweet:', error)
+      }
+    }
   }
 
   async function handleVerify() {
@@ -165,7 +176,10 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
         overflow: 'hidden',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box'
       }}>
       {/* Reply indicator */}
       {isReply && (
@@ -180,7 +194,7 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
         }} />
       )}
 
-      <div style={{ display: 'flex', gap: '16px' }}>
+      <div style={{ display: 'flex', gap: '16px', width: '100%', maxWidth: '100%' }}>
         {/* Avatar */}
         <div className="hover-scale" style={{ 
           width: '56px', 
@@ -200,14 +214,17 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
           {author?.name?.charAt(0).toUpperCase() || '?'}
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: 1, minWidth: 0, maxWidth: '100%', overflow: 'hidden' }}>
           {/* Header */}
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
             gap: '8px', 
             marginBottom: '8px',
-            flexWrap: 'wrap'
+            flexWrap: 'wrap',
+            width: '100%',
+            maxWidth: '100%',
+            overflow: 'hidden'
           }}>
             <h3 style={{ 
               margin: 0, 
@@ -245,11 +262,114 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
             lineHeight: '1.6',
             color: 'var(--text)',
             wordBreak: 'break-word',
-            fontWeight: '400'
+            overflowWrap: 'break-word',
+            wordWrap: 'break-word',
+            fontWeight: '400',
+            maxWidth: '100%',
+            overflow: 'hidden'
           }}>
             {tweet.content}
           </div>
 
+          {/* Verification Status Banner */
+          /* Mobile-friendly layout via CSS classes below */}
+          {isVerified && verificationData && (
+            <div style={{
+              marginBottom: '20px',
+              borderRadius: '16px',
+              padding: '16px 20px',
+              border: '2px solid',
+              position: 'relative',
+              overflow: 'hidden',
+              ...(getVerificationBannerStyle(verificationData.verdict))
+            }} className="verification-banner-card">
+              {/* Background Pattern */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                opacity: 0.1,
+                background: `url("data:image/svg+xml,%3Csvg width='20' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='a' patternUnits='userSpaceOnUse' width='20' height='20' patternTransform='scale(0.5) rotate(0)'%3E%3Crect x='0' y='0' width='100%25' height='100%25' fill='none'/%3E%3Cpath d='M10 10m-1 0a1 1 0 1 1 2 0a1 1 0 1 1-2 0' stroke='currentColor' stroke-width='1'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23a)'/%3E%3C/svg%3E")`,
+              }} />
+              
+              <div style={{
+                position: 'relative',
+                zIndex: 1
+              }} className="verification-banner">
+                {/* Verification Icon */}
+                <div style={{
+                  fontSize: '24px',
+                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+                }} className="verification-banner__icon">
+                  {getVerificationIcon(verificationData.verdict)}
+                </div>
+                
+                <div style={{ flex: 1 }} className="verification-banner__content">
+                  {/* Verification Title */}
+                  <div style={{
+                    fontSize: '16px',
+                    fontWeight: '700',
+                    marginBottom: '4px',
+                    color: 'inherit'
+                  }} className="verification-banner__title">
+                    {getVerificationTitle(verificationData.verdict)}
+                  </div>
+                  
+                  {/* Confidence Level */}
+                  <div style={{
+                    fontSize: '14px',
+                    opacity: 0.9,
+                    marginBottom: '8px'
+                  }} className="verification-banner__subtitle">
+                    {getConfidenceText(verificationData.confidence)} • Verified by AI
+                  </div>
+                  
+                  {/* Confidence Bar */}
+                  <div style={{
+                    width: '100%',
+                    height: '6px',
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    borderRadius: '3px',
+                    overflow: 'hidden'
+                  }} className="verification-banner__bar">
+                    <div style={{
+                      height: '100%',
+                      width: `${verificationData.confidence * 100}%`,
+                      background: 'rgba(255,255,255,0.8)',
+                      borderRadius: '3px',
+                      transition: 'width 0.8s ease'
+                    }} className="verification-banner__bar-fill" />
+                  </div>
+                </div>
+                
+                {/* Confidence Percentage */}
+                <div style={{
+                  fontSize: '18px',
+                  fontWeight: '800',
+                  color: 'inherit'
+                }} className="verification-banner__percent">
+                  {Math.round(verificationData.confidence * 100)}%
+                </div>
+              </div>
+              
+              {/* Verification Details */}
+              <div style={{
+                marginTop: '12px',
+                padding: '12px',
+                backgroundColor: 'rgba(255,255,255,0.1)',
+                borderRadius: '12px',
+                fontSize: '14px',
+                lineHeight: '1.5',
+                color: 'inherit',
+                opacity: 0.9
+              }} className="verification-banner__details">
+                <strong>Analysis:</strong> {verificationData.reason}
+              </div>
+            </div>
+          )}
+          
           {/* Verification Status Banner */}
           {isVerified && verificationData && (
             <div style={{
@@ -356,10 +476,14 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
-            gap: '32px',
+            gap: '16px',
             marginTop: '16px',
             paddingTop: '16px',
-            borderTop: '1px solid var(--border-light)'
+            borderTop: '1px solid var(--border-light)',
+            flexWrap: 'wrap',
+            width: '100%',
+            maxWidth: '100%',
+            overflow: 'hidden'
           }}>
             {/* Reply */}
             <button 
@@ -374,11 +498,13 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
                 background: 'var(--bg-glass)',
                 border: '1px solid var(--border)',
                 backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)'
+                WebkitBackdropFilter: 'blur(10px)',
+                flex: '1',
+                minWidth: '80px'
               }}
             >
               <span style={{ marginRight: '8px', fontSize: '16px' }}>💬</span>
-              {tweet.replyCount || tweet.replies.length || 0}
+              <span className="desktop-only">{tweet.replyCount || tweet.replies.length || 0}</span>
             </button>
 
             {/* Retweet */}
@@ -394,11 +520,13 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
                 background: 'var(--bg-glass)',
                 border: '1px solid var(--border)',
                 backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)'
+                WebkitBackdropFilter: 'blur(10px)',
+                flex: '1',
+                minWidth: '80px'
               }}
             >
               <span style={{ marginRight: '8px', fontSize: '16px' }}>🔄</span>
-              {tweet.retweetCount || tweet.retweets.length || 0}
+              <span className="desktop-only">{tweet.retweetCount || tweet.retweets.length || 0}</span>
             </button>
 
             {/* Like */}
@@ -414,11 +542,13 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
                 background: 'var(--bg-glass)',
                 border: '1px solid var(--border)',
                 backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)'
+                WebkitBackdropFilter: 'blur(10px)',
+                flex: '1',
+                minWidth: '80px'
               }}
             >
               <span style={{ marginRight: '8px', fontSize: '16px' }}>{likedByMe ? '❤️' : '🤍'}</span>
-              {tweet.likeCount || tweet.likes.length || 0}
+              <span className="desktop-only">{tweet.likeCount || tweet.likes.length || 0}</span>
             </button>
 
             {/* Verify Button / Verified Status */}
@@ -438,13 +568,15 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
                   background: 'var(--bg-glass)',
                   border: '1px solid var(--border)',
                   backdropFilter: 'blur(10px)',
-                  WebkitBackdropFilter: 'blur(10px)'
+                  WebkitBackdropFilter: 'blur(10px)',
+                  flex: '1',
+                  minWidth: '80px'
                 }}
               >
                 <span style={{ marginRight: '8px', fontSize: '16px' }}>
                   {isVerifying ? '⏳' : '✅'}
                 </span>
-                {isVerifying ? 'Verifying...' : 'Verify'}
+                <span className="desktop-only">{isVerifying ? 'Verifying...' : 'Verify'}</span>
               </button>
             ) : (
               <div style={{
@@ -457,11 +589,39 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
                 border: '2px solid #10b981',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '8px',
+                flex: '1',
+                minWidth: '80px',
+                justifyContent: 'center'
               }}>
                 <span style={{ fontSize: '16px' }}>✅</span>
-                <span>Verified</span>
+                <span className="desktop-only">Verified</span>
               </div>
+            )}
+
+            {/* Delete Button - Only show for own tweets */}
+            {isMyTweet && (
+              <button
+                onClick={handleDelete}
+                className="btn btn-danger btn-sm hover-lift hover-glow"
+                style={{
+                  padding: '12px 16px',
+                  fontSize: '15px',
+                  fontWeight: '700',
+                  color: '#ef4444',
+                  borderRadius: 'var(--radius-lg)',
+                  background: 'var(--bg-glass)',
+                  border: '1px solid #ef4444',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
+                  transition: 'all 0.3s ease',
+                  flex: '1',
+                  minWidth: '80px'
+                }}
+              >
+                <span style={{ marginRight: '8px', fontSize: '16px' }}>🗑️</span>
+                <span className="desktop-only">Delete</span>
+              </button>
             )}
 
           </div>

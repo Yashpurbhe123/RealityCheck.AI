@@ -85,7 +85,7 @@ export default function Login() {
         filter: 'blur(30px)'
       }} />
 
-      <div className="card card-elevated animate-fade-in" style={{
+      <div className="card card-elevated animate-fade-in responsive-padding" style={{
         background: 'var(--bg-secondary)',
         padding: '48px',
         borderRadius: 'var(--radius-xl)',
@@ -95,7 +95,8 @@ export default function Login() {
         position: 'relative',
         zIndex: 10,
         backdropFilter: 'blur(10px)',
-        border: '1px solid rgba(255,255,255,0.2)'
+        border: '1px solid rgba(255,255,255,0.2)',
+        margin: '20px'
       }}>
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
@@ -132,10 +133,11 @@ export default function Login() {
             margin: 0,
             fontWeight: '500'
           }}>
-            Connect, Share, and Discover<br/>
-            For Demo, create a new account or login using demo credentials <br/>
+            Connect, Share, and Discover <br/>
+            For accessing the app, create an account <br/>
+            or use demo credentials : <br/>
             demo username : Yash <br/>
-            demo password : 1234
+            demo password : 1234 <br/>
           </p>
         </div>
 

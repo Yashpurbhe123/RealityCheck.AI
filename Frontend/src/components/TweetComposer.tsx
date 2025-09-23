@@ -71,10 +71,18 @@ export default function TweetComposer() {
           justifyContent: 'space-between', 
           alignItems: 'center',
           paddingTop: '16px',
-          borderTop: '1px solid var(--border)'
+          borderTop: '1px solid var(--border)',
+          flexWrap: 'wrap',
+          gap: '12px'
         }}>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '12px',
+            flex: '1',
+            minWidth: '200px'
+          }}>
             <div style={{ 
               fontSize: '12px', 
               color: 'var(--text-muted)',
@@ -82,21 +90,22 @@ export default function TweetComposer() {
             }}>
               {text.length}/280
             </div>
-            <button 
-              type="submit" 
-              disabled={!text.trim()} 
-              className="btn btn-primary hover-glow"
-              style={{
-                padding: '12px 24px',
-                fontSize: '16px',
-                fontWeight: '700',
-                borderRadius: 'var(--radius-xl)',
-                minWidth: '100px'
-              }}
-            >
-              Tweet
-            </button>
           </div>
+          <button 
+            type="submit" 
+            disabled={!text.trim()} 
+            className="btn btn-primary hover-glow"
+            style={{
+              padding: '12px 24px',
+              fontSize: '16px',
+              fontWeight: '700',
+              borderRadius: 'var(--radius-xl)',
+              minWidth: '100px',
+              flexShrink: 0
+            }}
+          >
+            Tweet
+          </button>
         </div>
       </form>
     </div>

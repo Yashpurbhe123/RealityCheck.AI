@@ -22,7 +22,7 @@ export default function HomePage() {
     <Layout>
       <div className="animate-fade-in">
         {/* Hero Header */}
-        <div className="card animate-slide-in-up" style={{ 
+        <div className="card animate-slide-in-up responsive-padding" style={{ 
           padding: '32px',
           marginBottom: '32px',
           background: 'var(--bg-glass)',
@@ -32,7 +32,12 @@ export default function HomePage() {
           WebkitBackdropFilter: 'blur(20px)',
           boxShadow: 'var(--shadow-xl)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+          <div className="responsive-flex" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between', 
+            marginBottom: '20px' 
+          }}>
             <div>
               <h1 style={{ 
                 margin: 0, 
@@ -54,12 +59,12 @@ export default function HomePage() {
                 Stay connected with what matters most
               </p>
             </div>
-            <div style={{ 
+            <div className="responsive-flex horizontal-mobile" style={{ 
               display: 'flex',
               alignItems: 'center',
               gap: '16px'
             }}>
-              <div className="animate-glow" style={{ 
+              <div className="desktop-only animate-glow" style={{ 
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px',
@@ -128,11 +133,16 @@ export default function HomePage() {
             }}>
               Follow some amazing people or start sharing your thoughts to see content here.
             </p>
-            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
-              <button className="btn btn-primary hover-lift hover-glow" style={{ padding: '14px 24px', fontSize: '16px' }}>
+            <div className="responsive-flex" style={{ 
+              display: 'flex', 
+              gap: '16px', 
+              justifyContent: 'center',
+              flexWrap: 'wrap'
+            }}>
+              <button className="btn btn-primary hover-lift hover-glow" style={{ padding: '14px 24px', fontSize: '16px', flex: '1', minWidth: '150px' }}>
                 Explore People 👥
               </button>
-              <button className="btn btn-secondary hover-lift" style={{ padding: '14px 24px', fontSize: '16px' }}>
+              <button className="btn btn-secondary hover-lift" style={{ padding: '14px 24px', fontSize: '16px', flex: '1', minWidth: '150px' }}>
                 Start Tweeting ✍️
               </button>
             </div>

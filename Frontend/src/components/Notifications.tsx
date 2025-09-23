@@ -179,8 +179,8 @@ export default function Notifications() {
             right: '20px',
             width: '400px',
             maxWidth: 'calc(100vw - 40px)',
-            background: 'var(--card-bg)',
-            border: '1px solid var(--border-color)',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border)',
             borderRadius: '16px',
             boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
             zIndex: 2147483647,
@@ -193,7 +193,7 @@ export default function Notifications() {
           {/* Header */}
           <div style={{
             padding: '20px 24px',
-            borderBottom: '1px solid var(--border-color)',
+            borderBottom: '1px solid var(--border)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -258,7 +258,7 @@ export default function Notifications() {
                     onClick={() => handleNotificationClick(notification)}
                     style={{
                       padding: '16px 24px',
-                      borderBottom: index < sortedNotifications.length - 1 ? '1px solid var(--border-color)' : 'none',
+                      borderBottom: index < sortedNotifications.length - 1 ? '1px solid var(--border)' : 'none',
                       cursor: 'pointer',
                       background: notification.read ? 'transparent' : 'linear-gradient(90deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%)',
                       display: 'flex',
@@ -337,7 +337,7 @@ export default function Notifications() {
                         background: 'var(--primary)',
                         marginTop: '8px',
                         flexShrink: 0,
-                        boxShadow: '0 0 0 2px var(--card-bg)'
+                        boxShadow: '0 0 0 2px var(--bg-secondary)'
                       }} />
                     )}
                   </div>

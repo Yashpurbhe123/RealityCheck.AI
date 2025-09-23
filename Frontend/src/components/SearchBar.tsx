@@ -112,8 +112,9 @@ export default function SearchBar() {
     )
   }
 
-  function formatTime(timestamp: number): string {
-    const diff = Date.now() - timestamp
+  function formatTime(timestamp: number | string): string {
+    const time = typeof timestamp === 'string' ? new Date(timestamp).getTime() : timestamp
+    const diff = Date.now() - time
     const minutes = Math.floor(diff / (1000 * 60))
     if (minutes < 1) return 'now'
     if (minutes < 60) return `${minutes}m`
@@ -197,7 +198,9 @@ export default function SearchBar() {
           zIndex: 1000,
           marginTop: '8px',
           overflow: 'hidden',
-          maxHeight: '500px'
+          maxHeight: '500px',
+          maxWidth: 'calc(100vw - 40px)',
+          width: '400px'
         }}>
           {/* Search Tabs */}
           <div style={{ 
@@ -326,8 +329,13 @@ export default function SearchBar() {
                         </div>
                       )}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px',
+                      flexShrink: 0
+                    }}>
+                      <div className="desktop-only" style={{
                         fontSize: '11px',
                         color: 'var(--text-muted)',
                         fontWeight: '500'
@@ -381,7 +389,7 @@ export default function SearchBar() {
                 {filteredResults.tweets.slice(0, 8).map(tweet => (
                   <div
                     key={tweet._id || tweet.id}
-                    onClick={() => handleTweetClick(tweet.id)}
+                    onClick={() => handleTweetClick(tweet._id || tweet.id)}
                     className="hover-lift"
                     style={{
                       padding: '12px 16px',
@@ -404,7 +412,7 @@ export default function SearchBar() {
                         fontSize: '14px',
                         flexShrink: 0
                       }}>
-                        {state.users[tweet.authorId]?.name?.charAt(0).toUpperCase() || '?'}
+                        {tweet.author?.name?.charAt(0).toUpperCase() || state.users[tweet.authorId]?.name?.charAt(0).toUpperCase() || '?'}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ 
@@ -419,13 +427,13 @@ export default function SearchBar() {
                             fontSize: '14px',
                             color: 'var(--text)'
                           }}>
-                            {state.users[tweet.authorId]?.name || 'Unknown'}
+                            {tweet.author?.name || state.users[tweet.authorId]?.name || 'Unknown'}
                           </span>
                           <span style={{ 
                             color: 'var(--text-muted)', 
                             fontSize: '13px'
                           }}>
-                            @{state.users[tweet.authorId]?.handle || 'unknown'}
+                            @{tweet.author?.handle || state.users[tweet.authorId]?.handle || 'unknown'}
                           </span>
                           <span style={{ 
                             color: 'var(--text-muted)', 
@@ -455,9 +463,9 @@ export default function SearchBar() {
                           fontSize: '12px',
                           color: 'var(--text-muted)'
                         }}>
-                          <span>❤️ {tweet.likes}</span>
-                          <span>🔄 {tweet.retweets}</span>
-                          <span>💬 {tweet.replies}</span>
+                          <span>❤️ {tweet.likeCount ?? (Array.isArray(tweet.likes) ? tweet.likes.length : 0)}</span>
+                          <span>🔄 {tweet.retweetCount ?? (Array.isArray(tweet.retweets) ? tweet.retweets.length : 0)}</span>
+                          <span>💬 {tweet.replyCount ?? (Array.isArray(tweet.replies) ? tweet.replies.length : 0)}</span>
                         </div>
                       </div>
                     </div>

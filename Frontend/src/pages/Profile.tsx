@@ -56,7 +56,7 @@ export default function ProfilePage() {
     <Layout>
       <div className="animate-fade-in">
         {/* Profile Header */}
-        <div className="card card-elevated" style={{ 
+        <div className="card card-elevated responsive-padding" style={{ 
           padding: '32px', 
           marginBottom: '24px',
           background: 'var(--bg-secondary)',
@@ -64,7 +64,12 @@ export default function ProfilePage() {
           borderRadius: 'var(--radius-lg)',
           boxShadow: 'var(--shadow-lg)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '24px' }}>
+          <div className="responsive-flex" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '24px', 
+            marginBottom: '24px' 
+          }}>
             <div style={{ 
               width: '100px', 
               height: '100px', 
@@ -76,11 +81,12 @@ export default function ProfilePage() {
               color: 'white',
               fontWeight: '700',
               fontSize: '36px',
-              boxShadow: 'var(--shadow-md)'
+              boxShadow: 'var(--shadow-md)',
+              flexShrink: 0
             }}>
               {currentUser.name.charAt(0).toUpperCase()}
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <h1 style={{ 
                 margin: '0 0 8px 0', 
                 fontSize: '32px',
@@ -108,11 +114,12 @@ export default function ProfilePage() {
                 </p>
               )}
               
-              <div style={{ 
+              <div className="responsive-flex" style={{ 
                 display: 'flex', 
                 gap: '32px', 
                 color: 'var(--text-muted)',
-                fontSize: '16px'
+                fontSize: '16px',
+                flexWrap: 'wrap'
               }}>
                 <span>
                   <strong style={{ color: 'var(--text)', fontSize: '20px' }}>
@@ -241,7 +248,7 @@ export default function ProfilePage() {
             }}>
               Suggested Users
             </h3>
-            <div style={{ display: 'grid', gap: '16px' }}>
+            <div className="responsive-grid" style={{ display: 'grid', gap: '16px' }}>
               {suggestedUsers.map(user => (
                 <div 
                   key={user._id} 
@@ -256,7 +263,8 @@ export default function ProfilePage() {
                     borderRadius: 'var(--radius)',
                     border: '1px solid var(--border-light)',
                     cursor: 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    minWidth: 0
                   }}
                 >
                   <div style={{ 
@@ -269,23 +277,30 @@ export default function ProfilePage() {
                     justifyContent: 'center',
                     color: 'white',
                     fontWeight: '700',
-                    fontSize: '18px'
+                    fontSize: '18px',
+                    flexShrink: 0
                   }}>
                     {user.name.charAt(0).toUpperCase()}
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ 
                       fontWeight: '700', 
                       fontSize: '16px',
                       color: 'var(--text)',
-                      marginBottom: '4px'
+                      marginBottom: '4px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
                     }}>
                       {user.name}
                     </div>
                     <div style={{ 
                       color: 'var(--text-muted)', 
                       fontSize: '14px',
-                      marginBottom: '4px'
+                      marginBottom: '4px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
                     }}>
                       @{user.handle}
                     </div>
@@ -293,19 +308,26 @@ export default function ProfilePage() {
                       <div style={{ 
                         color: 'var(--text-secondary)', 
                         fontSize: '14px',
-                        lineHeight: '1.4'
+                        lineHeight: '1.4',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
                       }}>
                         {user.bio}
                       </div>
                     )}
                   </div>
                   <button
-                    onClick={() => toggleFollow(user._id)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleFollow(user._id)
+                    }}
                     className={`btn ${currentUser.following.includes(user._id) ? 'btn-secondary' : 'btn-primary'} btn-sm hover-glow`}
                     style={{
                       fontSize: '14px',
                       fontWeight: '600',
-                      minWidth: '80px'
+                      minWidth: '80px',
+                      flexShrink: 0
                     }}
                   >
                     {currentUser.following.includes(user._id) ? 'Following' : 'Follow'}

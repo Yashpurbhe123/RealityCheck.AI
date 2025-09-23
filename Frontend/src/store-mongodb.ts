@@ -359,6 +359,25 @@ export async function addReply(parentId: string, content: string): Promise<void>
   }
 }
 
+export async function deleteTweet(tweetId: string): Promise<void> {
+  if (!state.currentUserId) return
+  
+  setState({ loading: true, error: null })
+  
+  try {
+    await apiService.deleteTweet(tweetId, state.currentUserId)
+    
+    setState({
+      tweets: state.tweets.filter(tweet => tweet._id !== tweetId)
+    })
+  } catch (error) {
+    console.error('Failed to delete tweet:', error)
+    setState({ error: 'Failed to delete tweet' })
+  } finally {
+    setState({ loading: false })
+  }
+}
+
 // Following System
 export async function toggleFollow(userId: string): Promise<void> {
   if (!state.currentUserId || state.currentUserId === userId) return

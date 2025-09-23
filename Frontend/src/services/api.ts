@@ -125,6 +125,13 @@ class ApiService {
     return this.request<any[]>(`/tweets/search/${encodeURIComponent(query)}`);
   }
 
+  async deleteTweet(tweetId: string, userId: string) {
+    return this.request<any>(`/tweets/${tweetId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ userId }),
+    });
+  }
+
   // Notification endpoints
   async getNotifications(userId: string) {
     try {

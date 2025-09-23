@@ -16,18 +16,7 @@ interface VerificationModalProps {
 export default function VerificationModal({ result, isVisible, onClose, onConfirm }: VerificationModalProps) {
   if (!isVisible || !result) return null
 
- const getVerdictInfo = (verdict?: string) => {
-    if (!verdict) {
-      return {
-        color: '#f59e0b',
-        bgColor: '#fef3c7',
-        icon: '⚠️',
-        title: 'Uncertain',
-        subtitle: 'Verdict is unavailable',
-        gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
-      }
-    }
-
+  const getVerdictInfo = (verdict: string) => {
     const lowerVerdict = verdict.toLowerCase()
     if (lowerVerdict.includes('true') || lowerVerdict.includes('accurate') || lowerVerdict.includes('real')) {
       return {
@@ -59,14 +48,8 @@ export default function VerificationModal({ result, isVisible, onClose, onConfir
     }
   }
 
-  const getConfidenceInfo = (confidence?: number) => {
-    if (confidence === undefined || confidence === null || isNaN(confidence)) {
-      return {
-        color: '#f59e0b',
-        label: 'Confidence Unknown',
-        icon: '⚠️'
-      }
-    } else if (confidence >= 0.8) {
+  const getConfidenceInfo = (confidence: number) => {
+    if (confidence >= 0.8) {
       return {
         color: '#10b981',
         label: 'High Confidence',
@@ -87,17 +70,12 @@ export default function VerificationModal({ result, isVisible, onClose, onConfir
     }
   }
 
-  const formatConfidence = (confidence?: number) => {
-    if (confidence === undefined || confidence === null || isNaN(confidence)) {
-      return 'N/A'
-    }
+  const formatConfidence = (confidence: number) => {
     return `${Math.round(confidence * 100)}%`
   }
 
-  // Usage with fail-safe
-  const verdictInfo = getVerdictInfo(result?.verdict)
-  const confidenceInfo = getConfidenceInfo(result?.confidence)
-
+  const verdictInfo = getVerdictInfo(result.verdict)
+  const confidenceInfo = getConfidenceInfo(result.confidence)
 
   return (
     <div style={{
@@ -456,4 +434,3 @@ export default function VerificationModal({ result, isVisible, onClose, onConfir
     </div>
   )
 }
-
