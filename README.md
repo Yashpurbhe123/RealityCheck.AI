@@ -34,6 +34,12 @@ Misinformation spreads faster than truth ⚡ and fuels chaos in society.
 
 ---
 
+### Images 
+<img src="Assets/Screenshot (788).png" width="400"><img src="Assets/Screenshot (789).png" width="400">
+<img src="Assets/Screenshot (790).png" width="400"><img src="Assets/Screenshot (791).png" width="400">
+
+---
+
 ## 🛠️ Features 🚀  
 
 - 🔹 **In-App Fact-Checking** – Validate posts inside the feed itself.  
