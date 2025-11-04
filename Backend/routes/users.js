@@ -1,8 +1,7 @@
-import express from "express";
-import User from "../models/User.js";
-import Tweet from "../models/Tweet.js";
-
+const express = require('express');
 const router = express.Router();
+const User = require('../models/User');
+const Tweet = require('../models/Tweet');
 
 // Get all users
 router.get('/', async (req, res) => {
@@ -141,4 +140,4 @@ router.get('/search/:query', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

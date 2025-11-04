@@ -1,6 +1,11 @@
-const API_BASE_URL = 'https://realitycheck-ai-v1.onrender.com/api';
+// Use environment variable or fallback to localhost for development
+// Port 3001: User data, tweets, notifications, auth
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://googlegenaiexchange-backend-132180526643.us-central1.run.app/api';
+// Port 3000: Verifications and chatbots
+const VERIFICATION_API_BASE_URL = 'https://reality-check-ai-agent-132180526643.us-central1.run.app/api';
 
 class ApiService {
+  // Request method for main API (port 3001)
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
     const config: RequestInit = {
@@ -37,6 +42,57 @@ class ApiService {
       return await response.json();
     } catch (error) {
       console.error('API request failed:', error);
+      // Check if it's a network error (connection issue)
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error(`Cannot connect to server at ${url}. Make sure the backend server is running on ${API_BASE_URL}`);
+      }
+      // Convert error to a proper string message
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(errorMessage);
+    }
+  }
+
+  // Request method for verification/chatbot API (port 3000)
+  private async verificationRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const url = `${VERIFICATION_API_BASE_URL}${endpoint}`;
+    const config: RequestInit = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    };
+
+    try {
+      const response = await fetch(url, config);
+      if (!response.ok) {
+        // Try to extract server error message
+        let message = `HTTP error! status: ${response.status}`;
+        try {
+          const text = await response.text();
+          console.log('Error response text:', text);
+          if (text) {
+            try {
+              const json = JSON.parse(text);
+              message = json.error || json.message || message;
+              console.log('Parsed error:', message);
+            } catch {
+              message = text;
+              console.log('Raw error text:', message);
+            }
+          }
+        } catch (e) {
+          console.log('Error parsing response:', e);
+        }
+        throw new Error(message);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Verification API request failed:', error);
+      // Check if it's a network error (connection issue)
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new Error(`Cannot connect to server at ${url}. Make sure the verification backend server is running on ${VERIFICATION_API_BASE_URL}`);
+      }
       // Convert error to a proper string message
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(errorMessage);
@@ -85,9 +141,48 @@ class ApiService {
     return this.request<any>(`/tweets/${tweetId}`);
   }
 
+  async uploadImage(imageFile: File): Promise<string> {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    
+    const response = await fetch(`${API_BASE_URL}/upload/image`, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to upload image' }));
+      throw new Error(error.error || 'Failed to upload image');
+    }
+    
+    const result = await response.json();
+    
+    // Validate that we got a proper URL, not base64 data
+    if (!result.imageUrl || result.imageUrl.startsWith('data:')) {
+      throw new Error('Invalid image URL received from server');
+    }
+    
+    // If backend returned a relative URL, convert to full URL using API_BASE_URL
+    // Otherwise, use the full URL as-is
+    let imageUrl = result.imageUrl;
+    if (imageUrl.startsWith('/api/image/')) {
+      // Extract base URL from API_BASE_URL (remove /api suffix if present)
+      const baseUrl = API_BASE_URL.replace('/api', '');
+      imageUrl = `${baseUrl}${imageUrl}`;
+    }
+    
+    // Ensure we have a valid full URL
+    if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+      throw new Error('Invalid image URL format');
+    }
+    
+    return imageUrl;
+  }
+
   async createTweet(tweetData: { 
     author: string; 
     content: string; 
+    imageUrl?: string;
     parentTweet?: string;
   }) {
     return this.request<any>('/tweets', {
@@ -182,11 +277,54 @@ class ApiService {
     return this.request<any>('/health');
   }
 
-  // Verification
-  async verifyTweet(payload: { tweetId?: string; content: string }) {
-    return this.request<any>('/verify', {
+  // Verification (port 3000)
+  async verifyTweet(payload: { tweetId?: string; content: string; username: string; socialMediaType: string; imageUrl?: string }) {
+    return this.verificationRequest<any>('/verify', {
       method: 'POST',
       body: JSON.stringify(payload),
+    });
+  }
+
+  // Chatbot (port 3000)
+  async chatbotQuery(query: string) {
+    return this.verificationRequest<{ response: string }>('/chatbot', {
+      method: 'POST',
+      body: JSON.stringify({ query }),
+    });
+  }
+
+  // Tweet-specific Chatbot (port 3000)
+  async tweetChatbotQuery(payload: {
+    query: string
+    tweetContent: string
+    verificationResult: any
+    tweetId?: string
+    imageUrl?: string
+  }) {
+    return this.verificationRequest<{ response: string }>('/chatbot/tweet', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Chat session endpoints (port 3000)
+  async createChatSession(userName: string, platformId: number) {
+    return this.verificationRequest<{ message: string; chatId: string }>('/chat/session', {
+      method: 'POST',
+      body: JSON.stringify({ userName, platformId }),
+    });
+  }
+
+  async sendChatMessage(chatId: string, userName: string, platformId: number, query: string) {
+    return this.verificationRequest<{ response: string }>('/chat/send', {
+      method: 'POST',
+      body: JSON.stringify({ chatId, userName, platformId, query }),
+    });
+  }
+
+  async getChatHistory(chatId: string) {
+    return this.verificationRequest<{ message: string; chatId: string; data: any[] }>(`/chat/history/${chatId}`, {
+      method: 'GET',
     });
   }
 }

@@ -1,0 +1,14 @@
+name: API Caller - Top Viewed
+
+on:
+  workflow_dispatch:       # allows manual trigger from GitHub UI
+  schedule:
+    - cron: "*/5 * * * *"  # every 5 minutes (UTC time)
+
+jobs:
+  call-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call API (GET request)
+        run: |
+          curl -s -X GET "https://nasaspaceapps-8omo.onrender.com/dashboard/topviewed"

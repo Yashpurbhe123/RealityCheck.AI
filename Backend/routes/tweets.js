@@ -1,10 +1,9 @@
-import express from "express";
-import mongoose from "mongoose";
-import Tweet from "../models/Tweet.js";
-import User from "../models/User.js";
-import Notification from "../models/Notification.js";
-
+const express = require('express');
 const router = express.Router();
+const Tweet = require('../models/Tweet');
+const User = require('../models/User');
+const mongoose = require('mongoose');
+const Notification = require('../models/Notification');
 
 // Get all tweets (feed)
 router.get('/', async (req, res) => {
@@ -86,6 +85,11 @@ router.post('/', async (req, res) => {
     // Ensure either content or image is provided
     if ((!content || content.trim() === '') && !imageUrl) {
       return res.status(400).json({ error: 'Content or image is required' });
+    }
+    
+    // Validate imageUrl - reject base64 data URIs (they're too large for database)
+    if (imageUrl && imageUrl.startsWith('data:')) {
+      return res.status(400).json({ error: 'Base64 image URLs are not allowed. Please upload the image first.' });
     }
     
     const tweet = new Tweet({
@@ -200,6 +204,11 @@ router.post('/:id/reply', async (req, res) => {
       return res.status(404).json({ error: 'Parent tweet not found' });
     }
     
+    // Validate imageUrl - reject base64 data URIs
+    if (imageUrl && imageUrl.startsWith('data:')) {
+      return res.status(400).json({ error: 'Base64 image URLs are not allowed. Please upload the image first.' });
+    }
+    
     const reply = new Tweet({
       author,
       content,
@@ -230,31 +239,6 @@ router.post('/:id/reply', async (req, res) => {
     res.status(201).json(reply);
   } catch (error) {
     res.status(400).json({ error: error.message });
-  }
-});
-
-// Search tweets
-router.get('/search/:query', async (req, res) => {
-  try {
-    const query = req.params.query;
-    
-    if (!query || query.trim() === '') {
-      return res.json([]);
-    }
-    
-    const tweets = await Tweet.find({
-      $or: [
-        { content: { $regex: query, $options: 'i' } }
-      ]
-    })
-    .populate('author', 'name handle avatarUrl')
-    .sort({ createdAt: -1 })
-    .lean(); // Use lean() to avoid virtuals issues
-    
-    res.json(tweets || []);
-  } catch (error) {
-    console.error('Search tweets error:', error);
-    res.status(500).json({ error: error.message });
   }
 });
 
@@ -307,5 +291,4 @@ router.get('/search/:query', async (req, res) => {
   }
 });
 
-export default router;
-
+module.exports = router;

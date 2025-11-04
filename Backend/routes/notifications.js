@@ -1,8 +1,7 @@
-import express from "express";
-import Notification from "../models/Notification.js";
-import User from "../models/User.js";
-
+const express = require('express');
 const router = express.Router();
+const Notification = require('../models/Notification');
+const User = require('../models/User');
 
 // Get user notifications
 router.get('/:userId', async (req, res) => {
@@ -87,4 +86,4 @@ router.get('/:userId/unread-count', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

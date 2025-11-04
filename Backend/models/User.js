@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'
+const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
   handle: {
@@ -65,4 +65,4 @@ userSchema.virtual('followingCount').get(function() {
 // Ensure virtual fields are serialized
 userSchema.set('toJSON', { virtuals: true });
 
-export default mongoose.model('User', userSchema);
+module.exports = mongoose.model('User', userSchema);

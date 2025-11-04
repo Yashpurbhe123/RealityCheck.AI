@@ -1,4 +1,4 @@
-import mongoose from 'mongoose'
+const mongoose = require('mongoose');
 
 const tweetSchema = new mongoose.Schema({
   author: {
@@ -72,4 +72,4 @@ tweetSchema.virtual('replyCount').get(function() {
 // Ensure virtual fields are serialized
 tweetSchema.set('toJSON', { virtuals: true });
 
-export default mongoose.model('Tweet', tweetSchema);
+module.exports = mongoose.model('Tweet', tweetSchema);

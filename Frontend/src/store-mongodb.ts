@@ -17,6 +17,7 @@ export type Tweet = {
   _id: string
   author: User
   content: string
+  imageUrl?: string
   parentTweet?: string
   likes: string[]
   retweets: Array<{ user: string; retweetedAt: string }>
@@ -225,6 +226,37 @@ export async function login(handle: string, name: string): Promise<void> {
   }
 }
 
+// Login with user object directly (from API response)
+export async function loginWithUser(user: User): Promise<void> {
+  setState({ loading: true, error: null })
+  
+  try {
+    // Update users map
+    setState({
+      users: { ...state.users, [user._id]: user },
+      currentUserId: user._id,
+      isAuthenticated: true
+    })
+    
+    // Save to localStorage
+    localStorage.setItem('currentUserId', user._id)
+    
+    // Set loading to false immediately so authentication completes
+    setState({ loading: false })
+    
+    // Load user-specific data in the background (non-blocking)
+    Promise.all([
+      loadTweets(),
+      loadNotifications()
+    ]).catch(error => {
+      console.error('Failed to load user data after login:', error)
+    })
+  } catch (error) {
+    console.error('Login failed:', error)
+    setState({ error: 'Login failed', loading: false })
+  }
+}
+
 export function logout(): void {
   setState({
     currentUserId: null,
@@ -253,7 +285,7 @@ export async function switchAccount(userId: string): Promise<void> {
 }
 
 // Tweet Management
-export async function addTweet(content: string): Promise<void> {
+export async function addTweet(content: string, imageUrl?: string): Promise<void> {
   if (!state.currentUserId) return
   
   setState({ loading: true, error: null })
@@ -261,12 +293,14 @@ export async function addTweet(content: string): Promise<void> {
   try {
     console.log('Creating tweet with:', {
       author: state.currentUserId,
-      content
+      content,
+      imageUrl
     });
     
     const tweet = await apiService.createTweet({
       author: state.currentUserId,
-      content
+      content,
+      imageUrl
     });
     
     console.log('Tweet created successfully:', tweet);

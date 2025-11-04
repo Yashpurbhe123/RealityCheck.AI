@@ -1,0 +1,16 @@
+name: API Caller
+
+on:
+  workflow_dispatch:       # allows manual trigger from GitHub UI
+  schedule:
+    - cron: "*/5 * * * *"  # every 5 minutes (UTC time)
+
+jobs:
+  call-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call API
+        run: |
+          curl -s -X POST "https://realitycheck-ai-v1.onrender.com/login" \
+            -H "Content-Type: application/json" \
+            -d '{"handle": "Yash", "password": 1234}'

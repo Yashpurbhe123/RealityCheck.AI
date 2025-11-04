@@ -1,7 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 // keep existing store login to avoid breaking flows
-import { login as localLogin } from '../store-mongodb'
+import { loginWithUser } from '../store-mongodb'
 import apiService from '../services/api'
 
 export default function Login() {
@@ -24,14 +24,15 @@ export default function Login() {
         if (!handle.trim() || !name.trim() || !email.trim() || !password.trim()) return
         const res = await apiService.register({ handle: handle.trim(), name: name.trim(), email: email.trim(), password: password.trim(), bio: bio.trim() || undefined })
         console.log('[REGISTER SUCCESS]', res)
-        // also login to existing local store to keep rest of app working
-        localLogin(res.user.handle, res.user.name)
+        // Login to local store with user object from API response
+        await loginWithUser(res.user)
         navigate('/')
       } else {
         if (!handle.trim() || !password.trim()) return
         const res = await apiService.login({ handle: handle.trim(), password: password.trim() })
         console.log('[LOGIN SUCCESS]', res)
-        localLogin(res.user.handle, res.user.name)
+        // Login to local store with user object from API response
+        await loginWithUser(res.user)
         navigate('/')
       }
     } catch (err: any) {

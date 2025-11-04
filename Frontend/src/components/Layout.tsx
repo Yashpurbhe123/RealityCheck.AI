@@ -278,7 +278,7 @@ export default function Layout({ children }: PropsWithChildren) {
           </div>
           <button
             onClick={() => setIsSidebarMinimized(!isSidebarMinimized)}
-            className="btn btn-ghost btn-sm hover-lift sidebar-toggle"
+            className="btn btn-ghost btn-sm hover-lift"
             style={{
               padding: '8px',
               borderRadius: '50%',

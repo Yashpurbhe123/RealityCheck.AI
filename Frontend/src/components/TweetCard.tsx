@@ -3,8 +3,24 @@ import type { Tweet } from '../store-mongodb'
 import { useEffect, useState } from 'react'
 import { subscribe } from '../store-mongodb'
 import { verifyTweetContent, type VerificationResult } from '../services/verification'
-import VerificationModal from './VerificationModal'
-import VerificationLoading from './VerificationLoading'
+import VerificationSidebar from './VerificationSidebar'
+import { apiService } from '../services/api'
+
+// Helper function to convert relative URLs to full URLs
+function getFullImageUrl(imageUrl: string | null | undefined): string | undefined {
+  if (!imageUrl) return undefined
+  
+  // If already a full URL, return as-is
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl
+  }
+  
+  // If relative URL, build full URL using API base URL
+  // Extract base URL from environment or use default
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'
+  const baseUrl = API_BASE_URL.replace('/api', '')
+  return `${baseUrl}${imageUrl}`
+}
 
 function formatTime(timestamp: number | string): string {
   const time = typeof timestamp === 'string' ? new Date(timestamp).getTime() : timestamp
@@ -25,9 +41,9 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
   const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null)
   const [isVerifying, setIsVerifying] = useState(false)
   const [verificationError, setVerificationError] = useState<string | null>(null)
-  const [showVerificationModal, setShowVerificationModal] = useState(false)
+  const [showVerificationSidebar, setShowVerificationSidebar] = useState(false)
   const [isVerified, setIsVerified] = useState(false)
-  const [verificationData, setVerificationData] = useState<VerificationResult | null>(null)
+  const [chatId, setChatId] = useState<string | null>(null)
   
   useEffect(() => {
     return subscribe(() => setState(getState()))
@@ -60,16 +76,19 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
 
   async function handleVerify() {
     const id = (tweet as any)._id || (tweet as any).id
-    console.log('[TweetCard] Starting verification for tweet:', id, tweet.content)
+    const username = author?.handle || 'unknown'
+    // Build full image URL if image exists
+    const imageUrl = getFullImageUrl(tweet.imageUrl)
+    console.log('[TweetCard] Starting verification for tweet:', id, tweet.content, username, 'image:', imageUrl)
     setIsVerifying(true)
     setVerificationError(null)
     setVerificationResult(null)
     
     try {
-      const result = await verifyTweetContent(id, tweet.content)
+      const result = await verifyTweetContent(id, tweet.content || '', username, 'twitter', imageUrl)
       if (result) {
         setVerificationResult(result)
-        setShowVerificationModal(true)
+        setIsVerified(true)
       } else {
         console.log('[TweetCard] No result received, setting error')
         setVerificationError('Unable to verify this tweet. Please try again.')
@@ -82,52 +101,57 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
     }
   }
 
-
   function closeVerificationResults() {
     setVerificationResult(null)
     setVerificationError(null)
   }
 
-  function handleCloseVerificationModal() {
-    setShowVerificationModal(false)
-    setVerificationResult(null)
+  async function handleExpandVerification() {
+    if (!verificationResult) return
+    
+    // Create chat session when Details button is clicked
+    try {
+      const currentUser = state.currentUserId ? state.users[state.currentUserId] : null
+      const userName = currentUser?.handle || 'unknown'
+      const platformId = 1
+      
+      const sessionResponse = await apiService.createChatSession(userName, platformId)
+      setChatId(sessionResponse.chatId)
+      setShowVerificationSidebar(true)
+    } catch (error) {
+      console.error('Failed to create chat session:', error)
+      // Still show sidebar even if chat session creation fails
+      setShowVerificationSidebar(true)
+    }
   }
 
-  function handleConfirmVerification() {
-    // Mark the tweet as verified
-    // In a real app, this would update the tweet in the database
-    console.log('[TweetCard] Tweet marked as verified:', tweet._id)
-    setIsVerified(true)
-    setVerificationData(verificationResult) // Store the verification result
-    setShowVerificationModal(false)
-    setVerificationResult(null)
-    // You could add a state update here to mark the tweet as verified locally
-    // For now, we'll just close the modal
+  function handleCloseVerificationSidebar() {
+    setShowVerificationSidebar(false)
   }
 
   // Helper functions for verification display
-  function getVerificationBannerStyle(verdict: string) {
-    const lowerVerdict = verdict.toLowerCase()
-    if (lowerVerdict.includes('true') || lowerVerdict.includes('accurate') || lowerVerdict.includes('real')) {
-      return {
-        backgroundColor: '#10b981',
-        color: 'white',
-        borderColor: '#059669'
-      }
-    } else if (lowerVerdict.includes('false') || lowerVerdict.includes('misinformation') || lowerVerdict.includes('fake')) {
-      return {
-        backgroundColor: '#ef4444',
-        color: 'white',
-        borderColor: '#dc2626'
-      }
-    } else {
-      return {
-        backgroundColor: '#f59e0b',
-        color: 'white',
-        borderColor: '#d97706'
-      }
-    }
-  }
+  // function getVerificationBannerStyle(verdict: string) {
+  //   const lowerVerdict = verdict.toLowerCase()
+  //   if (lowerVerdict.includes('true') || lowerVerdict.includes('accurate') || lowerVerdict.includes('real')) {
+  //     return {
+  //       backgroundColor: '#10b981',
+  //       color: 'white',
+  //       borderColor: '#059669'
+  //     }
+  //   } else if (lowerVerdict.includes('false') || lowerVerdict.includes('misinformation') || lowerVerdict.includes('fake')) {
+  //     return {
+  //       backgroundColor: '#ef4444',
+  //       color: 'white',
+  //       borderColor: '#dc2626'
+  //     }
+  //   } else {
+  //     return {
+  //       backgroundColor: '#f59e0b',
+  //       color: 'white',
+  //       borderColor: '#d97706'
+  //     }
+  //   }
+  // }
 
   function getVerificationIcon(verdict: string) {
     const lowerVerdict = verdict.toLowerCase()
@@ -140,16 +164,16 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
     }
   }
 
-  function getVerificationTitle(verdict: string) {
-    const lowerVerdict = verdict.toLowerCase()
-    if (lowerVerdict.includes('true') || lowerVerdict.includes('accurate') || lowerVerdict.includes('real')) {
-      return 'Verified as TRUE'
-    } else if (lowerVerdict.includes('false') || lowerVerdict.includes('misinformation') || lowerVerdict.includes('fake')) {
-      return 'Verified as FALSE'
-    } else {
-      return 'Verification UNCERTAIN'
-    }
-  }
+  // function getVerificationTitle(verdict: string) {
+  //   const lowerVerdict = verdict.toLowerCase()
+  //   if (lowerVerdict.includes('true') || lowerVerdict.includes('accurate') || lowerVerdict.includes('real')) {
+  //     return 'Verified as TRUE'
+  //   } else if (lowerVerdict.includes('false') || lowerVerdict.includes('misinformation') || lowerVerdict.includes('fake')) {
+  //     return 'Verified as FALSE'
+  //   } else {
+  //     return 'Verification UNCERTAIN'
+  //   }
+  // }
 
   function getConfidenceText(confidence: number) {
     if (confidence >= 0.8) {
@@ -161,15 +185,112 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
     }
   }
 
+  // Generate summary from full analysis (first 2-3 sentences, max 200 chars)
+  function generateSummary(reason: string): string {
+    if (!reason) return ''
+    
+    // Split by sentences
+    const sentences = reason.split(/[.!?]+/).filter(s => s.trim().length > 0)
+    
+    // Take first 2-3 sentences or limit to 200 characters
+    let summary = sentences.slice(0, 3).join('. ')
+    if (summary.length > 200) {
+      summary = summary.substring(0, 197) + '...'
+    } else if (sentences.length > 3) {
+      summary += '...'
+    }
+    
+    return summary.trim()
+  }
+
+  // Get verification styling based on result
+  const getVerificationStyles = () => {
+    if (!isVerified || !verificationResult) {
+      return {
+        borderColor: 'var(--border)',
+        borderWidth: '1px',
+        backgroundColor: 'var(--bg-glass)',
+        leftBorderColor: 'transparent'
+      }
+    }
+
+    const lowerVerdict = String(verificationResult.verdict ?? '').toLowerCase()
+    const confidence = verificationResult.confidence
+    
+    // Determine base color from verdict
+    let baseColor = '#f59e0b' // Default: uncertain
+    if (lowerVerdict.includes('true') || lowerVerdict.includes('accurate') || lowerVerdict.includes('real')) {
+      baseColor = '#10b981' // Green for true
+    } else if (lowerVerdict.includes('false') || lowerVerdict.includes('misinformation') || lowerVerdict.includes('fake')) {
+      baseColor = '#ef4444' // Red for false
+    }
+
+    // Adjust opacity based on confidence (higher confidence = more visible tint)
+    const opacity = Math.max(0.05, Math.min(0.15, confidence * 0.15))
+    
+    // Convert hex to rgb for rgba
+    const hexToRgb = (hex: string) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : { r: 0, g: 0, b: 0 }
+    }
+    
+    const rgb = hexToRgb(baseColor)
+    
+    return {
+      borderColor: baseColor,
+      borderWidth: '3px',
+      backgroundColor: `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`,
+      leftBorderColor: baseColor,
+      boxShadow: `0 0 0 1px ${baseColor}20, 0 4px 12px ${baseColor}15`
+    }
+  }
+
+  const verificationStyles = getVerificationStyles()
+  
+  const getVerificationBadge = () => {
+    if (!isVerified || !verificationResult) return null
+    
+    const lowerVerdict = verificationResult.verdict.toLowerCase()
+    
+    if (lowerVerdict.includes('true') || lowerVerdict.includes('accurate') || lowerVerdict.includes('real')) {
+      return {
+        label: 'Real News',
+        color: '#10b981',
+        bgColor: '#d1fae5',
+        icon: '✅'
+      }
+    } else if (lowerVerdict.includes('false') || lowerVerdict.includes('misinformation') || lowerVerdict.includes('fake')) {
+      return {
+        label: 'Fake News',
+        color: '#ef4444',
+        bgColor: '#fee2e2',
+        icon: '❌'
+      }
+    } else {
+      return {
+        label: 'Uncertain',
+        color: '#f59e0b',
+        bgColor: '#fef3c7',
+        icon: '⚠️'
+      }
+    }
+  }
+
+  const badgeInfo = getVerificationBadge()
+
   return (
     <>
       <article className={`card hover-lift hover-glow ${isReply ? 'animate-slide-in' : 'animate-fade-in'}`} style={{ 
         padding: '24px',
         marginBottom: '20px',
-        background: 'var(--bg-glass)',
-        border: '1px solid var(--border)',
+        background: verificationStyles.backgroundColor,
+        border: `${verificationStyles.borderWidth} solid ${verificationStyles.borderColor}`,
         borderRadius: 'var(--radius-xl)',
-        boxShadow: 'var(--shadow-lg)',
+        boxShadow: verificationStyles.boxShadow || 'var(--shadow-lg)',
         marginLeft: isReply ? '40px' : '0',
         opacity: isReply ? 0.9 : 1,
         position: 'relative',
@@ -181,6 +302,19 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
         maxWidth: '100%',
         boxSizing: 'border-box'
       }}>
+      {/* Verification Left Border Indicator */}
+      {isVerified && verificationResult && (
+        <div style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: '4px',
+          backgroundColor: verificationStyles.leftBorderColor,
+          borderRadius: 'var(--radius-xl) 0 0 var(--radius-xl)'
+        }} />
+      )}
+
       {/* Reply indicator */}
       {isReply && (
         <div style={{
@@ -218,41 +352,82 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
           {/* Header */}
           <div style={{ 
             display: 'flex', 
-            alignItems: 'center', 
-            gap: '8px', 
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: '12px',
             marginBottom: '8px',
             flexWrap: 'wrap',
             width: '100%',
             maxWidth: '100%',
             overflow: 'hidden'
           }}>
-            <h3 style={{ 
-              margin: 0, 
-              fontSize: '17px', 
-              fontWeight: '800',
-              color: 'var(--text)'
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              flexWrap: 'wrap',
+              flex: 1
             }}>
-              {author?.name ?? 'Unknown'}
-            </h3>
-            <span style={{ 
-              color: 'var(--text-muted)', 
-              fontSize: '14px',
-              fontWeight: '500'
-            }}>
-              @{author?.handle ?? 'unknown'}
-            </span>
-            <span style={{ 
-              color: 'var(--text-muted)', 
-              fontSize: '14px'
-            }}>
-              ·
-            </span>
-            <time style={{ 
-              color: 'var(--text-muted)', 
-              fontSize: '14px'
-            }}>
-              {formatTime(tweet.createdAt)}
-            </time>
+              <h3 style={{ 
+                margin: 0, 
+                fontSize: '17px', 
+                fontWeight: '800',
+                color: 'var(--text)'
+              }}>
+                {author?.name ?? 'Unknown'}
+              </h3>
+              <span style={{ 
+                color: 'var(--text-muted)', 
+                fontSize: '14px',
+                fontWeight: '500'
+              }}>
+                @{author?.handle ?? 'unknown'}
+              </span>
+              <span style={{ 
+                color: 'var(--text-muted)', 
+                fontSize: '14px'
+              }}>
+                ·
+              </span>
+              <time style={{ 
+                color: 'var(--text-muted)', 
+                fontSize: '14px'
+              }}>
+                {formatTime(tweet.createdAt)}
+              </time>
+            </div>
+            
+            {/* Verification Badge */}
+            {badgeInfo && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                flexShrink: 0
+              }}>
+                <div style={{
+                  padding: '8px 14px',
+                  borderRadius: '24px',
+                  backgroundColor: badgeInfo.bgColor,
+                  border: `1.5px solid ${badgeInfo.color}50`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: `0 2px 8px ${badgeInfo.color}20`,
+                  fontWeight: '600'
+                }}>
+                  <span style={{ fontSize: '16px' }}>{badgeInfo.icon}</span>
+                  <span style={{
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    color: badgeInfo.color === '#10b981' ? '#059669' : badgeInfo.color === '#ef4444' ? '#dc2626' : '#d97706',
+                    letterSpacing: '0.3px'
+                  }}>
+                    {badgeInfo.label}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Content */}
@@ -271,206 +446,228 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
             {tweet.content}
           </div>
 
-          {/* Verification Status Banner */
-          /* Mobile-friendly layout via CSS classes below */}
-          {isVerified && verificationData && (
+          {/* Image Display */}
+          {tweet.imageUrl && !tweet.imageUrl.startsWith('data:') && (
             <div style={{
               marginBottom: '20px',
               borderRadius: '16px',
-              padding: '16px 20px',
-              border: '2px solid',
-              position: 'relative',
               overflow: 'hidden',
-              ...(getVerificationBannerStyle(verificationData.verdict))
-            }} className="verification-banner-card">
-              {/* Background Pattern */}
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                opacity: 0.1,
-                background: `url("data:image/svg+xml,%3Csvg width='20' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='a' patternUnits='userSpaceOnUse' width='20' height='20' patternTransform='scale(0.5) rotate(0)'%3E%3Crect x='0' y='0' width='100%25' height='100%25' fill='none'/%3E%3Cpath d='M10 10m-1 0a1 1 0 1 1 2 0a1 1 0 1 1-2 0' stroke='currentColor' stroke-width='1'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23a)'/%3E%3C/svg%3E")`,
-              }} />
-              
-              <div style={{
-                position: 'relative',
-                zIndex: 1
-              }} className="verification-banner">
-                {/* Verification Icon */}
-                <div style={{
-                  fontSize: '24px',
-                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
-                }} className="verification-banner__icon">
-                  {getVerificationIcon(verificationData.verdict)}
-                </div>
-                
-                <div style={{ flex: 1 }} className="verification-banner__content">
-                  {/* Verification Title */}
-                  <div style={{
-                    fontSize: '16px',
-                    fontWeight: '700',
-                    marginBottom: '4px',
-                    color: 'inherit'
-                  }} className="verification-banner__title">
-                    {getVerificationTitle(verificationData.verdict)}
-                  </div>
-                  
-                  {/* Confidence Level */}
-                  <div style={{
-                    fontSize: '14px',
-                    opacity: 0.9,
-                    marginBottom: '8px'
-                  }} className="verification-banner__subtitle">
-                    {getConfidenceText(verificationData.confidence)} • Verified by AI
-                  </div>
-                  
-                  {/* Confidence Bar */}
-                  <div style={{
-                    width: '100%',
-                    height: '6px',
-                    backgroundColor: 'rgba(255,255,255,0.2)',
-                    borderRadius: '3px',
-                    overflow: 'hidden'
-                  }} className="verification-banner__bar">
-                    <div style={{
-                      height: '100%',
-                      width: `${verificationData.confidence * 100}%`,
-                      background: 'rgba(255,255,255,0.8)',
-                      borderRadius: '3px',
-                      transition: 'width 0.8s ease'
-                    }} className="verification-banner__bar-fill" />
-                  </div>
-                </div>
-                
-                {/* Confidence Percentage */}
-                <div style={{
-                  fontSize: '18px',
-                  fontWeight: '800',
-                  color: 'inherit'
-                }} className="verification-banner__percent">
-                  {Math.round(verificationData.confidence * 100)}%
-                </div>
-              </div>
-              
-              {/* Verification Details */}
-              <div style={{
-                marginTop: '12px',
-                padding: '12px',
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                borderRadius: '12px',
-                fontSize: '14px',
-                lineHeight: '1.5',
-                color: 'inherit',
-                opacity: 0.9
-              }} className="verification-banner__details">
-                <strong>Analysis:</strong> {verificationData.reason}
-              </div>
+              border: '1px solid var(--border)',
+              maxWidth: '100%'
+            }}>
+              <img
+                src={getFullImageUrl(tweet.imageUrl) || ''}
+                alt="Tweet image"
+                style={{
+                  width: '100%',
+                  maxHeight: '600px',
+                  objectFit: 'cover',
+                  display: 'block'
+                }}
+                onError={(e) => {
+                  // Fallback if image fails to load
+                  console.error('Failed to load image:', tweet.imageUrl)
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
             </div>
           )}
-          
-          {/* Verification Status Banner */}
-          {isVerified && verificationData && (
+
+          {/* Verification Summary Terminal Window */}
+          {isVerified && verificationResult && (
             <div style={{
               marginBottom: '20px',
-              borderRadius: '16px',
-              padding: '16px 20px',
-              border: '2px solid',
-              position: 'relative',
+              borderRadius: '12px',
               overflow: 'hidden',
-              ...(getVerificationBannerStyle(verificationData.verdict))
+              border: '1px solid var(--border)',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(0, 0, 0, 0.05)',
+              background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
+              animation: 'fadeIn 0.3s ease'
             }}>
-              {/* Background Pattern */}
+              {/* Terminal Header */}
               <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                opacity: 0.1,
-                background: `url("data:image/svg+xml,%3Csvg width='20' height='20' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='a' patternUnits='userSpaceOnUse' width='20' height='20' patternTransform='scale(0.5) rotate(0)'%3E%3Crect x='0' y='0' width='100%25' height='100%25' fill='none'/%3E%3Cpath d='M10 10m-1 0a1 1 0 1 1 2 0a1 1 0 1 1-2 0' stroke='currentColor' stroke-width='1'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23a)'/%3E%3C/svg%3E")`,
-              }} />
-              
-              <div style={{
-                position: 'relative',
-                zIndex: 1,
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 16px',
+                background: 'var(--bg-secondary)',
+                borderBottom: '1px solid var(--border)',
                 gap: '12px'
               }}>
-                {/* Verification Icon */}
                 <div style={{
-                  fontSize: '24px',
-                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  {getVerificationIcon(verificationData.verdict)}
-                </div>
-                
-                <div style={{ flex: 1 }}>
-                  {/* Verification Title */}
                   <div style={{
-                    fontSize: '16px',
-                    fontWeight: '700',
-                    marginBottom: '4px',
-                    color: 'inherit'
-                  }}>
-                    {getVerificationTitle(verificationData.verdict)}
-                  </div>
-                  
-                  {/* Confidence Level */}
-                  <div style={{
-                    fontSize: '14px',
-                    opacity: 0.9,
-                    marginBottom: '8px'
-                  }}>
-                    {getConfidenceText(verificationData.confidence)} • Verified by AI
-                  </div>
-                  
-                  {/* Confidence Bar */}
-                  <div style={{
-                    width: '100%',
-                    height: '6px',
-                    backgroundColor: 'rgba(255,255,255,0.2)',
-                    borderRadius: '3px',
-                    overflow: 'hidden'
+                    display: 'flex',
+                    gap: '6px'
                   }}>
                     <div style={{
-                      height: '100%',
-                      width: `${verificationData.confidence * 100}%`,
-                      background: 'rgba(255,255,255,0.8)',
-                      borderRadius: '3px',
-                      transition: 'width 0.8s ease'
-                    }} />
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      background: '#ef4444',
+                      boxShadow: '0 0 4px rgba(239, 68, 68, 0.5)'
+                    }}></div>
+                    <div style={{
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      background: '#f59e0b',
+                      boxShadow: '0 0 4px rgba(245, 158, 11, 0.5)'
+                    }}></div>
+                    <div style={{
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      background: '#10b981',
+                      boxShadow: '0 0 4px rgba(16, 185, 129, 0.5)'
+                    }}></div>
                   </div>
+                  <span style={{
+                    fontSize: '12px',
+                    color: 'var(--text-secondary)',
+                    fontFamily: 'monospace',
+                    fontWeight: '600',
+                    marginLeft: '8px'
+                  }}>
+                    verification-analysis
+                  </span>
                 </div>
-                
-                {/* Confidence Percentage */}
-                <div style={{
-                  fontSize: '18px',
-                  fontWeight: '800',
-                  color: 'inherit'
-                }}>
-                  {Math.round(verificationData.confidence * 100)}%
-                </div>
+                <button
+                  onClick={handleExpandVerification}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    color: 'var(--text)',
+                    backgroundColor: 'var(--bg-tertiary)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontFamily: 'monospace',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--primary-light)'
+                    e.currentTarget.style.borderColor = 'var(--primary)'
+                    e.currentTarget.style.color = 'var(--primary)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'
+                    e.currentTarget.style.borderColor = 'var(--border)'
+                    e.currentTarget.style.color = 'var(--text)'
+                  }}
+                >
+                  <span>Details</span>
+                  <span style={{ fontSize: '10px' }}>→</span>
+                </button>
               </div>
-              
-              {/* Verification Details */}
+
+              {/* Terminal Content */}
               <div style={{
-                marginTop: '12px',
-                padding: '12px',
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                borderRadius: '12px',
-                fontSize: '14px',
-                lineHeight: '1.5',
-                color: 'inherit',
-                opacity: 0.9
+                padding: '16px',
+                fontFamily: 'monospace',
+                fontSize: '13px',
+                lineHeight: '1.6',
+                color: 'var(--text)',
+                background: '#ffffff',
+                minHeight: '80px',
+                maxHeight: '150px',
+                overflow: 'auto'
               }}>
-                <strong>Analysis:</strong> {verificationData.reason}
+                {/* Prompt line */}
+                <div style={{
+                  marginBottom: '12px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '8px'
+                }}>
+                  <span style={{
+                    color: '#10b981',
+                    fontWeight: '600'
+                  }}>
+                    $&gt;
+                  </span>
+                  <span style={{
+                    color: '#6366f1'
+                  }}>
+                    Analysis Summary:
+                  </span>
+                </div>
+
+                {/* Summary content */}
+                <div style={{
+                  color: 'var(--text-secondary)',
+                  paddingLeft: '24px',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word'
+                }}>
+                  {generateSummary(verificationResult.reason) || 'Analysis complete.'}
+                </div>
+
+                {/* Verdict line */}
+                <div style={{
+                  marginTop: '12px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '8px'
+                }}>
+                  <span style={{
+                    color: '#10b981',
+                    fontWeight: '600'
+                  }}>
+                    $&gt;
+                  </span>
+                  <span style={{
+                    color: '#6366f1'
+                  }}>
+                    Verdict:
+                  </span>
+                  <span style={{
+                    color: getVerificationIcon(verificationResult.verdict) === '✅' ? '#10b981' : 
+                           getVerificationIcon(verificationResult.verdict) === '❌' ? '#ef4444' : '#f59e0b',
+                    fontWeight: '600',
+                    marginLeft: '8px'
+                  }}>
+                    {verificationResult.verdict}
+                  </span>
+                </div>
+
+                {/* Confidence line */}
+                <div style={{
+                  marginTop: '8px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '8px'
+                }}>
+                  <span style={{
+                    color: '#10b981',
+                    fontWeight: '600'
+                  }}>
+                    $&gt;
+                  </span>
+                  <span style={{
+                    color: '#6366f1'
+                  }}>
+                    Confidence:
+                  </span>
+                  <span style={{
+                    color: verificationResult.confidence >= 0.8 ? '#10b981' : 
+                           verificationResult.confidence >= 0.6 ? '#f59e0b' : '#ef4444',
+                    fontWeight: '600',
+                    marginLeft: '8px'
+                  }}>
+                    {Math.round(verificationResult.confidence * 100)}% ({getConfidenceText(verificationResult.confidence)})
+                  </span>
+                </div>
               </div>
             </div>
           )}
-          
           
           {/* Actions */}
           <div style={{ 
@@ -570,13 +767,54 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
                   backdropFilter: 'blur(10px)',
                   WebkitBackdropFilter: 'blur(10px)',
                   flex: '1',
-                  minWidth: '80px'
+                  minWidth: '80px',
+                  position: 'relative',
+                  overflow: 'hidden'
                 }}
               >
-                <span style={{ marginRight: '8px', fontSize: '16px' }}>
-                  {isVerifying ? '⏳' : '✅'}
+                {isVerifying && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(147, 51, 234, 0.1)',
+                    backdropFilter: 'blur(4px)',
+                    animation: 'geminiFade 1.5s ease-in-out infinite alternate'
+                  }}>
+                    <span style={{
+                      fontSize: '20px',
+                      background: 'linear-gradient(135deg, #9333ea 0%, #3b82f6 100%)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      color: 'transparent',
+                      fontWeight: 'bold'
+                    }}>
+                      ⭐
+                    </span>
+                  </div>
+                )}
+                <span style={{ 
+                  marginRight: '8px', 
+                  fontSize: '16px',
+                  opacity: isVerifying ? 0 : 1,
+                  transition: 'opacity 0.2s ease'
+                }}>
+                  ✅
                 </span>
-                <span className="desktop-only">{isVerifying ? 'Verifying...' : 'Verify'}</span>
+                <span 
+                  className="desktop-only"
+                  style={{
+                    opacity: isVerifying ? 0 : 1,
+                    transition: 'opacity 0.2s ease'
+                  }}
+                >
+                  Verify
+                </span>
               </button>
             ) : (
               <div style={{
@@ -749,16 +987,40 @@ export default function TweetCard({ tweet }: { tweet: Tweet }) {
         </div>
       )}
 
-      {/* Verification Loading Screen */}
-      <VerificationLoading isVisible={isVerifying} />
-
-      {/* Verification Results Modal */}
-      <VerificationModal
+      {/* Verification Sidebar */}
+      <VerificationSidebar
         result={verificationResult}
-        isVisible={showVerificationModal}
-        onClose={handleCloseVerificationModal}
-        onConfirm={handleConfirmVerification}
+        isVisible={showVerificationSidebar}
+        onClose={handleCloseVerificationSidebar}
+        tweetContent={tweet.content || ''}
+        tweetId={(tweet as any)._id || (tweet as any).id}
+        imageUrl={getFullImageUrl(tweet.imageUrl)}
+        chatId={chatId}
       />
+
+      {/* CSS Animations */}
+      <style>{`
+        @keyframes geminiFade {
+          0% {
+            opacity: 0.6;
+            transform: scale(0.9);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1.1);
+          }
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </>
   )
 }

@@ -7,10 +7,10 @@ export interface VerificationResult {
   awareness_factor?: string
 }
 
-export async function verifyTweetContent(tweetId: string | number | undefined, content: string): Promise<VerificationResult | null> {
+export async function verifyTweetContent(tweetId: string | number | undefined, content: string, username: string, socialMediaType: string = 'twitter', imageUrl?: string): Promise<VerificationResult | null> {
   try {
-    console.log('[VerifyTweet][client] Sending to server:', { tweetId, content })
-    const response = await api.verifyTweet({ tweetId: String(tweetId || ''), content })
+    console.log('[VerifyTweet][client] Sending to server:', { tweetId, content, username, socialMediaType, imageUrl })
+    const response = await api.verifyTweet({ tweetId: String(tweetId || ''), content, username, socialMediaType, imageUrl })
     console.log('[VerifyTweet][server->client] Full response:', response)
     
     // Extract the verification result from the response
