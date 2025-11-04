@@ -61,7 +61,7 @@ Misinformation fuels confusion, division, and distrust.
 8️⃣ **Chatbot** offers detailed clarifications and sources.  
 
 📊 **Flowchart:**  
-![Process Flow](Assets/Flowchart.gif)
+![Process Flow](Assets/Flowchart.png)
 
 ---
 
